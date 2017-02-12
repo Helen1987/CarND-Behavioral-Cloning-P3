@@ -39,7 +39,7 @@ def telemetry(sid, data):
         #throttle = 0.6 if speed < 21 else 0.2
         #throttle = 1.8/(1+2*(abs(old_steering_angle - steering_angle)))
         #throttle = 0.2/(1+(abs(old_steering_angle - steering_angle)/50))
-        throttle = 0.4
+        throttle = 0.2
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)
 
