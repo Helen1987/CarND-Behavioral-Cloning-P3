@@ -1,9 +1,5 @@
 #**Behavioral Cloning** 
 
-##Writeup Template
-
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
 ---
 
 **Behavrioal Cloning Project**
@@ -39,12 +35,15 @@ My project includes the following files:
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network 
 * writeup_report.md or writeup_report.pdf summarizing the results
+* image_processing.py includes image modification methods
+* Training data.ipynb jupyter notebook to explore training data and create training and validation sets
 
 ####2. Submssion includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
 ```sh
 python drive.py model.h5
 ```
+**NB**. To run succesfully keras version 1.2.0 or higher, must be installed. Check [this issue](https://github.com/fchollet/keras/issues/4792) for details.
 
 ####3. Submssion code is usable and readable
 
@@ -54,51 +53,36 @@ The model.py file contains the code for training and saving the convolution neur
 
 ####1. An appropriate model arcthiecture has been employed
 
-My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 (model.py lines 18-24) 
-
-The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
+For this task I took pre-trained VGG16 model and use feature extraction approach (train only the top-level of the network, the rest of the network remains fixed). According to [c231n](https://www.youtube.com/playlist?list=PLkt2uSq6rBVctENoVBg1TpCC7OQi31AlC) normalization does not give any performance boost for images, so I skipped this step. Relu is used as activation layer.
 
 ####2. Attempts to reduce overfitting in the model
 
-The model contains dropout layers in order to reduce overfitting (model.py lines 21). 
-
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
+To smooth my car behavior I use L2 regularization. I use only one `Dropout` layer to prevent overvitting. It is enough for model to drive.
+Car was trained on small balanced dataset from udacity data, a part from the rest data was used for validation set. On udacity data car drives backwards, so t1 is considered to be test track.
 
 ####3. Model parameter tuning
 
-The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 25).
+The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 86). Small L2 parameter (0.0001) fits better and standard 0.5 dropout is good enough.
 
 ####4. Appropriate training data
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road ... 
-
-For details about how I created the training data, see the next section. 
+I took training data from udacity dataset (~400 nicely balanced images). 
+![alt text][image1]
+I use left and right images with +-25 adjustment to simulate recovery images. To avoid bias to left\right turns I use image flipping with changing angle sign. Brightness augmentation was used to generalize the model. To add more data for rare angles I add the same image with slighly modified angle (see `perturb_angle` from notebook)
 
 ###Model Architecture and Training Strategy
 
 ####1. Solution Design Approach
 
-The overall strategy for deriving a model architecture was to ...
+I select feature extraction approach for this task. The idea behind it. Models fro ImageNet competition are able to indendify the objects, so it must be able to identify the road successfully. So, I just need to tune it a little to force to stay in the middle of the road. VGG16 is quite small and provide good results, so I choose it like a base model.
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
+First step was to get a balanced dataset. I divided data in bins with 0.1 step and choose the same number of images from each bin.
 
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
-
-To combat the overfitting, I modified the model so that ...
-
-Then I ... 
-
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
-
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
+To prevent overfitting and smooze car driving I introcude L2 regularization, but it was not enough. I had to add dropout as well. One dropout showed the best result.
 
 ####2. Final Model Architecture
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
-
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
-
-![alt text][image1]
+Frozen VGG16 with two Dense layers for regression task.
 
 ####3. Creation of the Training Set & Training Process
 
