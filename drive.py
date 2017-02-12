@@ -13,6 +13,7 @@ from flask import Flask
 from io import BytesIO
 
 from keras.models import load_model
+from image_processing import preprocess_image
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -24,17 +25,21 @@ prev_image_array = None
 def telemetry(sid, data):
     if data:
         # The current steering angle of the car
-        steering_angle = data["steering_angle"]
+        old_steering_angle = float(data["steering_angle"])
         # The current throttle of the car
-        throttle = data["throttle"]
+        old_throttle = float(data["throttle"]) or 1.2
         # The current speed of the car
-        speed = data["speed"]
+        speed = float(data["speed"])
         # The current image from the center camera of the car
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
+        image_array = preprocess_image(image_array)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
-        throttle = 0.2
+        #throttle = 0.6 if speed < 21 else 0.2
+        #throttle = 1.8/(1+2*(abs(old_steering_angle - steering_angle)))
+        #throttle = 0.2/(1+(abs(old_steering_angle - steering_angle)/50))
+        throttle = 0.4
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)
 
