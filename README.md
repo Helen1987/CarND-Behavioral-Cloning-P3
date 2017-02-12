@@ -1,115 +1,37 @@
 # Project 3: Use Deep Learning to Clone Driving Behavior
 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+[//]: # (Image References)
 
-Overview
----
-This repository contains starting files for P3, Behavioral Cloning.
+[train_data]: ./pic/train_set.png "Training dataset"
+[generated_data]: ./pic/generated.png "Generated images"
 
-In this project, you will use what you've learned about deep neural networks and convolutional neural networks to clone driving behavior. You will train, validate and test a model using Keras. The model will output a steering angle to an autonomous vehicle.
+_The idea behind solution_
 
-We have provided a simulator where you can steer a car around a track for data collection. You'll use image data and steering angles to train a neural network and then use this model to drive the car autonomously around the track.
+To clone car behavior I decided to use Feature extraction approach (train only the top-level of the network, the rest of the network remains fixed). Pre-trained network is able to identify different objects, so must be able to "find" the road. I just need to force the car to stay in the middle of it.
+Some benefits of this approach:
 
-We also want you to create a detailed writeup of the project. Check out the [writeup template](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup. The writeup can be either a markdown file or a pdf document.
+1. small training dataset
+2. reduce training time
 
-To meet specifications, the project will require submitting four files: 
-* model.py (script used to create and train the model)
-* drive.py (script to drive the car - feel free to modify this file)
-* model.h5 (a trained Keras model)
-* a report writeup file (either markdown or pdf)
+My personal goal for this project was to try to generalize to t2 without training on t2 and with minimal amount of augmentaion. Unfortunately, my car is not able to generalize to t2.
 
-Optionally, a video of your vehicle's performance can also be submitted with the project although this is optional. This README file describes how to output the video in the "Details About Files In This Directory" section.
+_Architecture_
 
-Creating a Great Writeup
----
-A great writeup should include the [rubric points](https://review.udacity.com/#!/rubrics/432/view) as well as your description of how you addressed each point.  You should include a detailed description of the code used (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
+As a basic model with frozen features I select VGG16 since it is quite simple and shows good performance. Two more `Dense` layers were added for regression task.
+According to [c231n](https://www.youtube.com/playlist?list=PLkt2uSq6rBVctENoVBg1TpCC7OQi31AlC) normalization does not give any benefit for work with pictures, so I skipped this step.
+Since our task is pretty basic network architecture is not the key point for this task. Balanced and recovery data are more significant.
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
+_Training_
 
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
+The most important part for this project are data. I explore the udacity data set in various ways. Information is inside [Training data.ipynb](https://github.com/Helen1987/CarND-Behavioral-Cloning-P3/blob/master/Training%20data.ipynb). I wanted to get balanced data set. To add recovery data I use left and right images with +-0.25 angle adjustment. The top of the image is useless for our purpose, so I decided to remove it. I added flipped images to prevent bias to left and right curves.
 
-The Project
----
-The goals / steps of this project are the following:
-* Use the simulator to collect data of good driving behavior 
-* Design, train and validate a model that predicts a steering angle from image data
-* Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
-* Summarize the results with a written report
+To get a balanced dataset I divide my training set into bins with 0.01 step. From every bin I took the same pictures count. Overall I had ~400 images to train my car to drive.
 
-### Dependencies
-This lab requires:
+To analyze my car behavior I saved the model after each iteration via callbacks. I noticed the car overfitted, so added L2 regularization. Car started to drive smoothly but still my model overfitted. I added dropout before output layer. It helped and my car started to drive nicely. Initially, I struggled with the place after the bridge but then I realized that the simulator was in 'Fantastic' mode. I switched to the 'Fastest' mode and my car passed t1.
 
-* [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit)
+To generalize to track 2 I added brightness augmentaion to every image in generator. So, my car was trained on images (You can see the black region on image. I need small image size, so my computer is able to handle it. But VGG16 smallest input size is 48x48. I had to add region of interest technique instead of cropping to remove top of the image.):
+![alt text][generated_data]
 
-The lab enviroment can be created with CarND Term1 Starter Kit. Click [here](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) for the details.
+My model started to converge fast and car generalize to track 2 but was not able to pass it. I noticed that I have no enough data in my train set for >0.5 angles. As result, I generated some more data for rare angles (the same image but with slighly changed angle). Result train set:
 
-The following resources can be found in this github repository:
-* drive.py
-* video.py
-* writeup_template.md
-
-The simulator can be downloaded from the classroom. In the classroom, we have also provided sample data that you can optionally use to help train your model.
-
-## Details About Files In This Directory
-
-### `drive.py`
-
-Usage of `drive.py` requires you have saved the trained model as an h5 file, i.e. `model.h5`. See the [Keras documentation](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model) for how to create this file using the following command:
-```sh
-model.save(filepath)
-```
-
-Once the model has been saved, it can be used with drive.py using this command:
-
-```sh
-python drive.py model.h5
-```
-
-The above command will load the trained model and use the model to make predictions on individual images in real-time and send the predicted angle back to the server via a websocket connection.
-
-#### Saving a video of the autonomous agent
-
-```sh
-python drive.py model.h5 run1
-```
-
-The fourth argument `run1` is the directory to save the images seen by the agent to. If the directory already exists it'll be overwritten.
-
-```sh
-ls run1
-
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_424.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_451.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_477.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_528.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_573.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_618.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_697.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_723.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_749.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_817.jpg
-...
-```
-
-The image file name is a timestamp when the image image was seen. This information is used by `video.py` to create a chronological video of the agent driving.
-
-### `video.py`
-
-```sh
-python video.py run1
-```
-
-Create a video based on images found in the `run1` directory. The name of the video will be name of the directory following by `'.mp4'`, so, in this case the video will be `run1.mp4`.
-
-Optionally one can specify the FPS (frames per second) of the video:
-
-```sh
-python video.py run1 --fps 48
-```
-
-The video will run at 48 FPS. The default FPS is 60.
-
-#### Why create a video
-
-1. It's been noted the simulator might perform differently based on the hardware. So if your model drives succesfully on your machine it might not on another machine (your reviewer). Saving a video is a solid backup in case this happens.
-2. You could slightly alter the code in `drive.py` and/or `video.py` to create a video of what your model sees after the image is processed (may be helpful for debugging).
+![alt text][train_data]
