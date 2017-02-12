@@ -23,7 +23,7 @@ Since our task is pretty basic network architecture is not the key point for thi
 
 _Training_
 
-The most important part for this project are data. I explore the udacity data set in various ways. Information is inside [Training data.ipynb](https://github.com/Helen1987/CarND-Behavioral-Cloning-P3/blob/master/Training%20data.ipynb). I wanted to get balanced data set. To add recovery data I use left and right images with +-0.25 angle adjustment. The top of the image is useless for our purpose, so I decided to remove it.
+The most important part for this project are data. I explore the udacity data set in various ways. Information is inside [Training data.ipynb](https://github.com/Helen1987/CarND-Behavioral-Cloning-P3/blob/master/Training%20data.ipynb). I wanted to get balanced data set. To add recovery data I use left and right images with +-0.25 angle adjustment. The top of the image is useless for our purpose, so I decided to remove it. I added flipped images to prevent bias to left and right curves.
 
 To get a balanced dataset I divide my training set into bins with 0.01 step. From every bin I took the same pictures count. Overall I had ~400 images to train my car to drive.
 
