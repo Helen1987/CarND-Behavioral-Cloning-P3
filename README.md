@@ -6,7 +6,15 @@
 [generated_data]: ./pic/generated.png "Generated images"
 [vgg16]: ./pic/VGG16.jpg "VGG16"
 
-_The idea behind solution_
+## Run a solution
+
+For the project you have to download [Udacity simulator](https://d17h27t6h515a5.cloudfront.net/topher/2016/November/5831f3a4_simulator-windows-64/simulator-windows-64.zip). You need to open it in _autonomous mode_ and run the command in the console:
+
+`python drive.py "model.h5"`
+
+The first track run is recorded and can be found [here](record.mp4)
+
+## The idea behind solution
 
 To clone car behavior I decided to use Feature extraction approach (train only the top-level of the network, the rest of the network remains fixed). Pre-trained network is able to identify different objects, so must be able to "find" the road. I just need to force the car to stay in the middle of it.
 Some benefits of this approach:
@@ -16,7 +24,7 @@ Some benefits of this approach:
 
 My personal goal for this project was to try to generalize to t2 without training on t2 and with minimal amount of augmentaion. Unfortunately, my car is not able to generalize to t2.
 
-_Architecture_
+## Architecture
 
 For a basic model with frozen features I select VGG16 since it is quite simple and shows good performance:
 
@@ -27,7 +35,7 @@ After `Flatten` layer two more `Dense` layers (with 1000 and 250 neurons) were a
 It is common to normalize your data near 0 to have a faster convergence, but according to [c231n](https://www.youtube.com/playlist?list=PLkt2uSq6rBVctENoVBg1TpCC7OQi31AlC) normalization does not give any benefit when you work with images, so I skipped this step.
 Since our task is pretty basic network architecture is not the key point for this task. Balanced and recovery data are more significant.
 
-_Training_
+## Training
 
 The most important part for this project are data. I explore the udacity data set in various ways. Information is inside [Training data.ipynb](https://github.com/Helen1987/CarND-Behavioral-Cloning-P3/blob/master/Training%20data.ipynb). I wanted to get balanced data set. To add recovery data I use left and right images with +-0.25 angle adjustment. The top of the image is useless for our purpose, so I decided to remove it. I added flipped images to prevent bias to left and right curves.
 
